@@ -13,18 +13,22 @@ def login(request):
 
         user = authenticate(request, username=username, password=password)
 
-        if user.groups.filter(name=role).exists():
-            auth_login(request, user)
-            if role == 'admin':
-                return redirect('adminDashboard')
-            elif role == 'teacher':
-                return redirect('teacherDashboard')
-            elif role == 'student':
-                return redirect('studentDashboard')
-            elif role == 'parent':
-                return redirect('parentDashboard')
+        if user is not None:
+            if user.groups.filter(name=role).exists():
+                auth_login(request, user)
+                
+                if role == 'Admin':
+                    return redirect('adminDashboard')
+                elif role == 'Teacher':
+                    return redirect('teacherDashboard')
+                elif role == 'Student':
+                    return redirect('studentDashboard')
+                elif role == 'Parent':
+                    return redirect('parentDashboard')
+            else:
+                messages.error(request, f"You are not assigned to the '{role}' group.")
         else:
-            messages.error(request, "Invalid username or password")
+            messages.error(request, "Invalid username or password.")
     
     return render(request, 'login.html')
 

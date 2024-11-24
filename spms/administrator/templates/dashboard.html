@@ -2,27 +2,35 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Admin Dashboard</h1>
-    <div class="row">
+    <h1 class="text-center text-primary">Admin Dashboard</h1>
+    <div class="row d-flex align-items-stretch justify-content-center">
         <!-- Admin-specific Widgets -->
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-danger h-100">
                 <div class="card-body">
                     <h5 class="card-title">Total Students</h5>
-                    <p class="card-text">1000</p>
+                    <p class="card-text">{{ students_count }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-success h-100">
                 <div class="card-body">
                     <h5 class="card-title">Total Staff</h5>
-                    <p class="card-text">150</p>
+                    <p class="card-text">{{ teachers_count }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Parents</h5>
+                    <p class="card-text">{{ parents_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-info h-100">
                 <div class="card-body">
                     <h5 class="card-title">Pending Tasks</h5>
                     <p class="card-text">7</p>
