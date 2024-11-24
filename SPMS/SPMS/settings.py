@@ -36,6 +36,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'spms.urls'
+LOGIN_URL = '/login/'
 
 TEMPLATES = [
     {

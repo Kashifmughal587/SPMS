@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 
 def home(request):
@@ -18,7 +18,7 @@ def login(request):
                 auth_login(request, user)
                 
                 if role == 'Admin':
-                    return redirect('adminDashboard')
+                    return redirect('admindashboard')
                 elif role == 'Teacher':
                     return redirect('teacherDashboard')
                 elif role == 'Student':
@@ -33,4 +33,5 @@ def login(request):
     return render(request, 'login.html')
 
 def logout(request):
+    auth_logout(request)
     return redirect('home')
