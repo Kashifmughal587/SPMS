@@ -1,20 +1,123 @@
-/* Custom Styles */
+/* Base Styles */
 body {
     font-family: Arial, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
 }
 
-.navbar {
-    margin-bottom: 20px;
-}
-
-footer {
+/* Light Mode */
+body.light-mode {
     background-color: #f8f9fa;
-    padding: 10px 0;
+    color: #212529;
+}
+
+body.light-mode .bg-light {
+    background-color: #ffffff !important;
+}
+
+body.light-mode .text-dark {
+    color: #212529 !important;
+}
+
+body.light-mode .nav-link {
+    color: #212529;
+    background-color: #e9ecef;
+    border-radius: 5px;
+}
+
+body.light-mode .nav-link:hover,
+body.light-mode .nav-link.active {
+    background-color: #d3d9de;
+    color: #212529;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+body.dark-mode .bg-light {
+    background-color: #343a40 !important;
+}
+
+body.dark-mode .text-dark {
+    color: #f8f9fa !important;
+}
+
+body.dark-mode .nav-link {
+    color: #f8f9fa;
+    background-color: #495057;
+    border-radius: 5px;
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Sidebar */
+#sidebar {
+    width: 250px;
+    min-height: 100vh;
+    transition: transform 0.3s ease;
+}
+
+#sidebar .nav-link {
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#sidebar .nav-link i {
+    font-size: 1.2rem;
+}
+
+.navbar .nav-link img {
+    width: 30px; /* Ensure the size matches the intended dimensions */
+    height: 30px;
+    object-fit: cover; /* Ensures the image doesn't stretch or distort */
+}
+
+.navbar .nav-link {
+    display: flex;
+    align-items: center; /* Centers the image vertically */
+    justify-content: center;
+    padding: 5px; /* Matches the padding of other buttons */
+}
+
+
+/* Cards */
+.card {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.light-mode .card {
+    background-color: #ffffff;
+    color: #212529;
+}
+
+body.dark-mode .card {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Buttons */
+button, .btn {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Footer */
+footer {
+    background-color: var(--bs-light);
+    color: var(--bs-dark);
     text-align: center;
+    padding: 10px;
 }
 
-.card-body {
-    font-size: 1.1rem;
+body.dark-mode footer {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
 }
-
-/* Additional custom styles can go here */

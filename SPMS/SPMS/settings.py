@@ -1,14 +1,10 @@
 from pathlib import Path
-from dotenv import load_dotenv
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv()
-
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
+SECRET_KEY='djk3!2!@1kflkn11@#$%knfkasdf^&*(iuhfq9123kjlhsdfkj'
+DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -22,6 +18,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'home',
+    'administrator',
+    'teachers',
+    'parents',
+    'students',
 ]
 
 MIDDLEWARE = [
@@ -34,7 +35,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'SPMS.urls'
+ROOT_URLCONF = 'spms.urls'
 
 TEMPLATES = [
     {
@@ -54,7 +55,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'SPMS.wsgi.application'
+WSGI_APPLICATION = 'spms.wsgi.application'
 
 
 # Database
