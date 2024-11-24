@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-2 text-gray-800">Students</h1>
+        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
+                class="fas fa-download fa-sm text-white-50"></i> Add Student</a>
+    </div>
+
+    <!-- DataTales Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Students</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Reg No#</th>
+                            <th>Name</th>
+                            <th>Guardian Name</th>
+                            <th>Gender</th>
+                            <th>Class & Section</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>Reg No#</th>
+                            <th>Name</th>
+                            <th>Guardian Name</th>
+                            <th>Gender</th>
+                            <th>Class & Section</th>
+                            <th>Action</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        {% for student in student_list %}
+                        <tr>
+                            <td>{{ student.registration_number }}</td>
+                            <td>{{ student.user__first_name }} {{ student.user__last_name }}</td>
+                            <td>{{ student.family__guardian__user__first_name }}{{ student.family__guardian__user__last_name }}</td>
+                            <td>{{ student.gender }}</td>
+                            <td>{{ student.class }} - {{ student.section }}</td>
+                            <td>
+                                <a href="{% url 'studentDetail' student.id %}" class="btn btn-primary btn-sm">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- /.container-fluid -->
+<!-- /.container-fluid -->
+{% endblock %}
