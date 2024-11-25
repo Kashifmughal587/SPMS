@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">School Sessions</h1>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Session Name</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in sessions %}
+                <tr>
+                    <td>{{ session.session_name }}</td>
+                    <td>{{ session.start_date }}</td>
+                    <td>{{ session.end_date }}</td>
+                    <td>
+                        <a href="{% url 'update_school_session' session.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'delete_school_session' session.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'add_school_session' %}" class="btn btn-success">Add New Session</a>
+</div>
+{% endblock %}

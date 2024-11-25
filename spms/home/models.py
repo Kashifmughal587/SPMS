@@ -30,7 +30,7 @@ class Class(models.Model):
     session = models.ForeignKey(SchoolSession, on_delete=models.CASCADE, related_name="classes")
     
     def __str__(self):
-        return f"{self.name} - {self.school.name}"
+        return f"{self.name}"
 
 # Section Model (e.g., A, B, C for each class)
 class Section(models.Model):

@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Add Student</h1>
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" action="{% url 'addstudent' %}" enctype="multipart/form-data">
         {% csrf_token %}
         
         <!-- Student Information -->
@@ -14,27 +14,27 @@
                 <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ reg_no }}" readonly>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="roll_number">Roll Number</label>
-                <input type="text" class="form-control" id="roll_number" name="roll_number">
+                <label for="roll_number">Roll Number <span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="roll_number" name="roll_number" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="first_name">First Name *</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" required>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="last_name">Last Name *</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" required>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="dob">DOB *</label>
-                <input type="date" class="form-control" id="dob" name="dob" required>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="birth_certificate">Birth Certificate/CNIC *</label>
+                <label for="birth_certificate">Birth Certificate/CNIC <span class="redstaric">*</span> <sub>(e.g : 12345-1234567-1)</sub></label>
                 <input type="text" class="form-control" id="birth_certificate" name="birth_certificate" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="gender">Gender *</label>
+                <label for="first_name">First Name <span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="first_name" name="first_name" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="last_name">Last Name <span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="last_name" name="last_name" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="dob">DOB <span class="redstaric">*</span></label>
+                <input type="date" class="form-control" id="dob" name="dob" required>
+            </div>            
+            <div class="col-md-4 mb-3">
+                <label for="gender">Gender <span class="redstaric">*</span></label>
                 <select class="form-control" id="gender" name="gender" required>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -42,35 +42,53 @@
                 </select>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="religion">Religion *</label>
+                <label for="religion">Religion <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="religion" name="religion" required>
             </div>
             <div class="col-md-4 mb-3">
                 <label for="blood_group">Blood Group</label>
                 <input type="text" class="form-control" id="blood_group" name="blood_group">
             </div>
+            <div class="col-md-4 mb-3">
+                <label for="contact_number">Contact Number <sub>(e.g : +92-300-1234567)</sub></label>
+                <input type="text" class="form-control" id="contact_number" name="contact_number">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="emergency_contact">Emergency Number <span class="redstaric">*</span> <sub>(e.g : +92-300-1234567)</sub></label>
+                <input type="text" class="form-control" id="emergency_contact" name="emergency_contact"required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="profile_picture">Profile Picture</label>
+                <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+            </div>
         </div>
 
         <!-- Address Information -->
         <div class="form-row">
-            <div class="col-md-4 mb-3">
-                <label for="address">Present Address *</label>
+            <div class="col-md-12 mb-3">
+                <label for="address">Present Address <span class="redstaric">*</span></label>
                 <textarea class="form-control" id="address" name="address" required></textarea>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="city">City *</label>
+                <label for="city">City <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="city" name="city" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="state">State *</label>
+                <label for="state">State <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="state" name="state" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="country">Country *</label>
+                <label for="country">Country <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="country" name="country" required>
             </div>
-            <div class="col-md-4 mb-3">
-                <label for="permanent_address">Permanent Address</label>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12 mb-3">
+                <div class="d-flex align-items-center">
+                    <label for="permanent_address" class="mr-2">Permanent Address</label>
+                    <input type="checkbox" id="same_as_present" class="ml-2" onchange="togglePermanentAddress()">
+                    <label for="same_as_present" class="ml-2">Same as Present Address</label>
+                </div>
                 <textarea class="form-control" id="permanent_address" name="permanent_address"></textarea>
             </div>
             <div class="col-md-4 mb-3">
@@ -85,13 +103,24 @@
                 <label for="permanent_country">Country</label>
                 <input type="text" class="form-control" id="permanent_country" name="permanent_country">
             </div>
-            <div class="col-md-4 mb-3">
-                <label for="contact_number">Contact Number</label>
-                <input type="text" class="form-control" id="contact_number" name="contact_number">
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="emergency_contact">Emergency Contact Number *</label>
-                <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" required>
+        </div>
+
+        <!-- Guardian Selection -->
+        <div class="form-group">
+            <label for="guardian_selection">Select Guardian:</label>
+            <div class="d-flex align-items-center">
+                <div class="form-check mr-3">
+                    <input class="form-check-input" type="radio" name="guardian" id="guardian_father" value="father" checked>
+                    <label class="form-check-label" for="guardian_father">
+                        Father
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="guardian" id="guardian_mother" value="mother">
+                    <label class="form-check-label" for="guardian_mother">
+                        Mother
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -99,27 +128,27 @@
         <h5>Guardian Details (Father):</h5>
         <div class="form-row">
             <div class="col-md-4 mb-3">
-                <label for="father_first_name">First Name *</label>
+                <label for="father_first_name">First Name <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="father_first_name" name="father_first_name" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="father_last_name">Last Name *</label>
+                <label for="father_last_name">Last Name <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="father_last_name" name="father_last_name" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="father_cnic">CNIC <span class="redstaric">*</span> <sub>(e.g : 12345-1234567-1)</sub></label>
+                <input type="text" class="form-control" id="father_cnic" name="father_cnic" required>
             </div>
             <div class="col-md-4 mb-3">
                 <label for="father_email">Email Address</label>
                 <input type="email" class="form-control" id="father_email" name="father_email">
             </div>
             <div class="col-md-4 mb-3">
-                <label for="father_cnic">CNIC *</label>
-                <input type="text" class="form-control" id="father_cnic" name="father_cnic" required>
+                <label for="father_mobile">Mobile Number <span class="redstaric">*</span> <sub>(e.g : +92-300-1234567)</sub></label>
+                <input type="text" class="form-control" id="father_mobile" name="father_mobile"required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="father_mobile">Mobile Number *</label>
-                <input type="text" class="form-control" id="father_mobile" name="father_mobile" required>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="father_whatsapp">WhatsApp Number</label>
+                <label for="father_whatsapp">WhatsApp Number <sub>(e.g : +92-300-1234567)</sub></label>
                 <input type="text" class="form-control" id="father_whatsapp" name="father_whatsapp">
             </div>
             <div class="col-md-4 mb-3">
@@ -135,27 +164,27 @@
         <h5>Guardian Details (Mother):</h5>
         <div class="form-row">
             <div class="col-md-4 mb-3">
-                <label for="mother_first_name">First Name *</label>
+                <label for="mother_first_name">First Name <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="mother_first_name" name="mother_first_name" required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="mother_last_name">Last Name *</label>
+                <label for="mother_last_name">Last Name <span class="redstaric">*</span></label>
                 <input type="text" class="form-control" id="mother_last_name" name="mother_last_name" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="mother_cnic">CNIC <span class="redstaric">*</span> <sub>(e.g : 12345-1234567-1)</sub></label>
+                <input type="text" class="form-control" id="mother_cnic" name="mother_cnic" required>
             </div>
             <div class="col-md-4 mb-3">
                 <label for="mother_email">Email Address</label>
                 <input type="email" class="form-control" id="mother_email" name="mother_email">
             </div>
             <div class="col-md-4 mb-3">
-                <label for="mother_cnic">CNIC *</label>
-                <input type="text" class="form-control" id="mother_cnic" name="mother_cnic" required>
+                <label for="mother_mobile">Mobile Number <span class="redstaric">*</span> <sub>(e.g : +92-300-1234567)</sub></label>
+                <input type="text" class="form-control" id="mother_mobile" name="mother_mobile"required>
             </div>
             <div class="col-md-4 mb-3">
-                <label for="mother_mobile">Mobile Number *</label>
-                <input type="text" class="form-control" id="mother_mobile" name="mother_mobile" required>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="mother_whatsapp">WhatsApp Number</label>
+                <label for="mother_whatsapp">WhatsApp Number <sub>(e.g : +92-300-1234567)</sub></label>
                 <input type="text" class="form-control" id="mother_whatsapp" name="mother_whatsapp">
             </div>
             <div class="col-md-4 mb-3">
