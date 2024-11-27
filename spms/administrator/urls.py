@@ -8,10 +8,10 @@ urlpatterns = [
     path('addstudent/', views.add_student, name="addstudent"),
     path('studentdetail/<int:student_id>/', views.student_detail, name="studentdetail"),
     
-    path('school_sessions/', views.school_session_list, name='school_session_list'),
-    path('add_school_session/', views.add_school_session, name='add_school_session'),
-    path('update_school_session/<int:session_id>/', views.update_school_session, name='update_school_session'),
-    path('delete_school_session/<int:session_id>/', views.delete_school_session, name='delete_school_session'),
+    # path('school_sessions/', views.school_session_list, name='school_session_list'),
+    # path('add_school_session/', views.add_school_session, name='add_school_session'),
+    # path('update_school_session/<int:session_id>/', views.update_school_session, name='update_school_session'),
+    # path('delete_school_session/<int:session_id>/', views.delete_school_session, name='delete_school_session'),
 
     path('classes/', views.class_list, name='class_list'),
     path('add_class/', views.add_class, name='add_class'),

@@ -4,6 +4,29 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Add Student</h1>
 
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
     <form method="post" action="{% url 'addstudent' %}" enctype="multipart/form-data">
         {% csrf_token %}
         

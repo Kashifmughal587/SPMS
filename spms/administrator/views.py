@@ -1,12 +1,16 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
-from home.models import Class, Section, Subject, ClassSubject, SchoolSession
+from home.models import Class, Section, Subject, SectionSubject, SchoolSession
 from students.models import Student
 from parents.models import Family, Parent
 from django.contrib import messages
 from django.utils import timezone
-from .forms import ClassSubjectForm, ClassForm, SectionForm, SubjectForm, ClassSubjectForm, SchoolSessionForm
+from django.http import JsonResponse
+
+#########################################################################################################
+#                                               DASHBOARD                                               #
+#########################################################################################################
 
 @login_required
 def dashboard(request):
@@ -21,9 +25,12 @@ def dashboard(request):
         'students_count': students_count,
         'teachers_count': teachers_count,
         'parents_count': parents_count,
-        
     })
     
+#########################################################################################################
+#                                       STUDENT END POINTS                                              #
+#########################################################################################################
+
 def student_list(request):
     students = Student.objects.select_related(
         'family', 
@@ -41,7 +48,7 @@ def student_list(request):
     )
 
     user = request.user
-    return render(request, 'students.html', {
+    return render(request, 'list_students.html', {
         'page': 'Students',
         'user' : user,
         'student_list': students,
@@ -62,8 +69,8 @@ def add_student(request):
         registration_number = request.POST.get('registration_number')
         roll_number = request.POST.get('roll_number')
         birth_certificate = request.POST.get('birth_certificate')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        first_name = request.POST.get('first_name').strip()
+        last_name = request.POST.get('last_name').strip()
         dob = request.POST.get('dob')
         gender = request.POST.get('gender')
         religion = request.POST.get('religion')
@@ -88,8 +95,8 @@ def add_student(request):
         # Guardian details
         guardian_data = {
             'father': {
-                'first_name': request.POST.get('father_first_name'),
-                'last_name': request.POST.get('father_last_name'),
+                'first_name': request.POST.get('father_first_name').strip(),
+                'last_name': request.POST.get('father_last_name').strip(),
                 'cnic': request.POST.get('father_cnic'),
                 'email': request.POST.get('father_email'),
                 'phone_number': request.POST.get('father_mobile'),
@@ -99,8 +106,8 @@ def add_student(request):
                 'relationship': 'Father',
             },
             'mother': {
-                'first_name': request.POST.get('mother_first_name'),
-                'last_name': request.POST.get('mother_last_name'),
+                'first_name': request.POST.get('mother_first_name').strip(),
+                'last_name': request.POST.get('mother_last_name').strip(),
                 'cnic': request.POST.get('mother_cnic'),
                 'email': request.POST.get('mother_email'),
                 'phone_number': request.POST.get('mother_mobile'),
@@ -180,201 +187,421 @@ def add_student(request):
         messages.success(request, 'Student added successfully!')
         return redirect('studentlist')
     else:
-        # Generate a new registration number
         last_student = Student.objects.order_by('-id').first()
         new_registration_number = f"REG{(int(last_student.registration_number[3:]) + 1) if last_student else 1:04d}"
-        return render(request, 'add_student.html', {'reg_no': new_registration_number})
+        user = request.user
+        return render(request, 'add_student.html', {
+            'page': 'Students',
+            'user' : user,
+            'reg_no': new_registration_number
+            })
     
 def student_detail(request, student_id):
     return (request)
 
-def school_session_list(request):
-    sessions = SchoolSession.objects.all()
-    return render(request, 'school_session_list.html', {'sessions': sessions})
+#########################################################################################################
+#                                       SESSION END POINTS                                              #
+#########################################################################################################
 
-def add_school_session(request):
-    if request.method == 'POST':
-        form = SchoolSessionForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('school_session_list')
-    else:
-        form = SchoolSessionForm()
-    return render(request, 'add_school_session.html', {'form': form})
+# def school_session_list(request):
+#     sessions = SchoolSession.objects.all()
+#     return render(request, 'school_session_list.html', {'sessions': sessions})
 
-def update_school_session(request, pk):
-    session = SchoolSession.objects.get(pk=pk)
-    if request.method == 'POST':
-        form = SchoolSessionForm(request.POST, instance=session)
-        if form.is_valid():
-            form.save()
-            return redirect('school_session_list')
-    else:
-        form = SchoolSessionForm(instance=session)
-    return render(request, 'update_school_session.html', {'form': form})
+# def add_school_session(request):
+#     if request.method == 'POST':
+#         form = SchoolSessionForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('school_session_list')
+#     else:
+#         form = SchoolSessionForm()
+#     return render(request, 'add_school_session.html', {'form': form})
 
-def delete_school_session(request, pk):
-    session = SchoolSession.objects.get(pk=pk)
-    session.delete()
-    return redirect('school_session_list')
+# def update_school_session(request, pk):
+#     session = SchoolSession.objects.get(pk=pk)
+#     if request.method == 'POST':
+#         form = SchoolSessionForm(request.POST, instance=session)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('school_session_list')
+#     else:
+#         form = SchoolSessionForm(instance=session)
+#     return render(request, 'update_school_session.html', {'form': form})
 
-# Create
-def add_class(request):
-    if request.method == "POST":
-        form = ClassForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('class_list')
-    else:
-        form = ClassForm()
-    user = request.user
-    return render(request, 'add_class.html', {
-        'page': 'Class',
-        'user' : user,
-        'form': form
-        })
+# def delete_school_session(request, pk):
+#     session = SchoolSession.objects.get(pk=pk)
+#     session.delete()
+#     return redirect('school_session_list')
+
+#########################################################################################################
+#                                       CLASS END POINTS                                                #
+#########################################################################################################
 
 # Read
 def class_list(request):
     classes = Class.objects.all()
     user = request.user
-    return render(request, 'class_list.html', {
+    return render(request, 'list_classes.html', {
         'page': 'Class',
         'user' : user,
         'classes': classes
         })
 
-# Update
+# Create
+def add_class(request):
+    if request.method == "POST":
+        required_fields = ['class_name']
+        user = request.user
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            return render(request, 'add_update_class.html', {
+                'page': 'Class',
+                'user' : user,
+                })
+        
+        current_session = SchoolSession.objects.filter(current=True).first()
+        if not current_session:
+            messages.error(request, "No current school session is active. Please set one before adding a class.")
+            return render(request, 'add_update_class.html', {
+                'page': 'Class',
+                'user' : user,
+                })
+            
+        class_name = request.POST.get('class_name').strip()
+        class_description = request.POST.get('class_description')
+        
+        if Class.objects.filter(name__iexact=class_name).exists():
+            messages.error(request, f"A Class with the name '{class_name}' already exists!")
+            return render(request, 'add_update_class.html', {
+                'page': 'Class',
+                'user' : user,
+                })
+
+        new_class = Class.objects.create(
+            name=class_name,
+            description=class_description,
+            session=current_session,
+        )
+
+        messages.success(request, f"Class '{new_class.name}' has been added successfully!")
+        return redirect('class_list')
+    else:
+        user = request.user
+        return render(request, 'add_update_class.html', {
+            'page': 'Class',
+            'user' : user
+            })
+
 def update_class(request, class_id):
     class_obj = get_object_or_404(Class, pk=class_id)
+    user = request.user
+
     if request.method == "POST":
-        form = ClassForm(request.POST, instance=class_obj)
-        if form.is_valid():
-            form.save()
-            return redirect('class_list')
-    else:
-        form = ClassForm(instance=class_obj)
-    return render(request, 'update_class.html', {'form': form})
+        required_fields = ['class_name']
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            return render(request, 'add_update_class.html', {
+                'page': 'Class',
+                'user': user,
+                'class_obj': class_obj,
+            })
+
+        class_name = request.POST.get('class_name').strip()
+        class_description = request.POST.get('class_description')
+        
+        if Class.objects.filter(name__iexact=class_name).exclude(pk=class_obj.pk).exists():
+            messages.error(request, f"A Class with the name '{class_name}' already exists!")
+            return render(request, 'add_update_class.html', {
+                'page': 'Class',
+                'user': user,
+                'class_obj': class_obj,
+            })
+
+        class_obj.name = class_name
+        class_obj.description = class_description
+        class_obj.save()
+
+        messages.success(request, f"Class '{class_obj.name}' has been updated successfully!")
+        return redirect('class_list')
+
+    return render(request, 'add_update_class.html', {
+        'page': 'Class',
+        'user': user,
+        'class_obj': class_obj,
+    })
 
 # Delete
 def delete_class(request, class_id):
     class_obj = get_object_or_404(Class, pk=class_id)
-    if request.method == "POST":
-        class_obj.delete()
-        return redirect('class_list')
-    return render(request, 'delete_class.html', {'class_obj': class_obj})
+    class_obj.delete()
+    messages.success(request, f"Subject '{class_obj.name}' has been deleted successfully!")
+    return redirect('class_list')
 
-# Create
-def add_section(request):
-    if request.method == "POST":
-        form = SectionForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('section_list')
-    else:
-        form = SectionForm()
-    return render(request, 'add_section.html', {'form': form})
+#########################################################################################################
+#                                       SECTION END POINTS                                              #
+#########################################################################################################
 
 # Read
 def section_list(request):
     sections = Section.objects.all()
     user = request.user
-    return render(request, 'section_list.html', {
+    return render(request, 'list_sections.html', {
         'page': 'Section',
         'user' : user,
-        'sections': sections})
+        'sections': sections
+        })
+    
+# Create
+def add_section(request):
+    user = request.user
+    if request.method == "POST":
+        required_fields = ['section_name', 'class_id']
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            classes = Class.objects.all()
+            return render(request, 'add_update_section.html', {
+                'page': 'Section',
+                'user' : user,
+                'classes' : classes
+                })
+
+        section_name = request.POST.get('section_name').strip()
+        section_description = request.POST.get('section_description')
+        class_id = request.POST.get('class_id')
+        class_obj = get_object_or_404(Class, pk=class_id)
+
+        if Section.objects.filter(name__iexact=section_name, class_name=class_obj).exists():
+            messages.error(request, f"A section with the name '{section_name}' already exists in class '{class_obj.name}'.")
+            classes = Class.objects.all()
+            return render(request, 'add_update_section.html', {
+                'page': 'Section',
+                'user': user,
+                'classes': classes
+            })
+
+        new_section = Section.objects.create(
+            class_name=class_obj,
+            name=section_name,
+            description=section_description,
+        )
+        messages.success(request, f"Section '{new_section.name}' has been added successfully!")
+        return redirect('section_list')
+    else:
+        classes = Class.objects.all()
+    return render(request, 'add_update_section.html', {
+        'page': 'Section',
+        'user' : user,
+        'classes' : classes
+        })
 
 # Update
 def update_section(request, section_id):
-    section = get_object_or_404(Section, pk=section_id)
+    section_obj = get_object_or_404(Section, pk=section_id)
+    user = request.user
     if request.method == "POST":
-        form = SectionForm(request.POST, instance=section)
-        if form.is_valid():
-            form.save()
-            return redirect('section_list')
+        required_fields = ['section_name', 'class_id']
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            classes = Class.objects.all()
+            return render(request, 'add_update_section.html', {
+                'page': 'Section',
+                'user' : user,
+                'classes' : classes
+                })
+
+        section_name = request.POST.get('section_name').strip()
+        section_description = request.POST.get('section_description')
+        class_id = request.POST.get('class_id')
+        class_obj = get_object_or_404(Class, pk=class_id)
+
+        if Section.objects.filter(name__iexact=section_name, class_name=class_obj).exclude(pk=section_obj.pk).exists():
+            messages.error(request, f"A section with the name '{section_name}' already exists in class '{class_obj.name}'.")
+            classes = Class.objects.all()
+            return render(request, 'add_update_section.html', {
+                'page': 'Section',
+                'user': user,
+                'classes': classes,
+                'section_obj': section_obj
+            })
+        
+        section_obj.name = section_name
+        section_obj.description = section_description
+        section_obj.class_name = class_obj
+        section_obj.save()
+        return redirect('section_list')
     else:
-        form = SectionForm(instance=section)
-    return render(request, 'update_section.html', {'form': form})
+        classes = Class.objects.all()
+    return render(request, 'add_update_section.html', {
+        'page': 'Section',
+        'user' : user,
+        'classes' : classes,
+        'section_obj' : section_obj
+        })
 
 # Delete
 def delete_section(request, section_id):
     section = get_object_or_404(Section, pk=section_id)
-    if request.method == "POST":
-        section.delete()
-        return redirect('section_list')
-    return render(request, 'delete_section.html', {'section': section})
+    section.delete()
+    messages.success(request, f"Subject '{section.name}' has been deleted successfully!")
+    return redirect('section_list')
 
-# Create
-def add_subject(request):
-    if request.method == "POST":
-        form = SubjectForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('subject_list')
-    else:
-        form = SubjectForm()
-    return render(request, 'add_subject.html', {'form': form})
+#########################################################################################################
+#                                       SUBJECT END POINTS                                              #
+#########################################################################################################
 
 # Read
 def subject_list(request):
     subjects = Subject.objects.all()
     user = request.user
-    return render(request, 'subject_list.html', {
+    return render(request, 'list_subjects.html', {
         'page': 'Subject',
         'user' : user,
         'subjects': subjects})
+    
+# Create
+def add_subject(request):
+    user = request.user
+    if request.method == "POST":
+        required_fields = ['subject_name']
+        user = request.user
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            return render(request, 'add_update_subject.html', {
+                'page': 'Subject',
+                'user' : user,
+                })
+            
+        subject_name = request.POST.get('subject_name').strip()
+        subject_description = request.POST.get('subject_description')
+        
+        if Subject.objects.filter(name__iexact=subject_name).exists():
+            messages.error(request, f"A Subject with the name '{subject_name}' already exists!")
+            return render(request, 'add_update_subject.html', {
+                'page': 'Subject',
+                'user' : user,
+                })
+
+        new_subject = Subject.objects.create(
+            name=subject_name,
+            description=subject_description,
+        )
+
+        messages.success(request, f"Subject '{new_subject.name}' has been added successfully!")
+        return redirect('subject_list')
+    else:
+        user = request.user
+        return render(request, 'add_update_subject.html', {
+            'page': 'Subject',
+            'user' : user})
+
 
 # Update
 def update_subject(request, subject_id):
-    subject = get_object_or_404(Subject, pk=subject_id)
+    subject_obj = get_object_or_404(Subject, pk=subject_id)
+    user = request.user
+
     if request.method == "POST":
-        form = SubjectForm(request.POST, instance=subject)
-        if form.is_valid():
-            form.save()
-            return redirect('subject_list')
-    else:
-        form = SubjectForm(instance=subject)
-    return render(request, 'update_subject.html', {'form': form})
+        required_fields = ['subject_name']
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            return render(request, 'add_update_subject.html', {
+                'page': 'Subject',
+                'user': user,
+                'subject_obj': subject_obj,
+            })
+
+        subject_name = request.POST.get('subject_name').strip()
+        subject_description = request.POST.get('subject_description')
+        
+        if Subject.objects.filter(name__iexact=subject_name).exclude(pk=subject_obj.pk).exists():
+            messages.error(request, f"A Subject with the name '{subject_name}' already exists!")
+            subjectes = Subject.objects.all()
+            return render(request, 'add_update_subject.html', {
+                'page': 'Subject',
+                'user': user,
+                'subject_obj': subject_obj,
+            })
+
+        subject_obj.name = subject_name
+        subject_obj.description = subject_description
+        subject_obj.save()
+
+        messages.success(request, f"Subject '{subject_obj.name}' has been updated successfully!")
+        return redirect('subject_list')
+
+    return render(request, 'add_update_subject.html', {
+        'page': 'Subject',
+        'user': user,
+        'subject_obj': subject_obj,
+    })
 
 # Delete
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, pk=subject_id)
-    if request.method == "POST":
-        subject.delete()
-        return redirect('subject_list')
-    return render(request, 'delete_subject.html', {'subject': subject})
+    subject.delete()
+    messages.success(request, f"Subject '{subject.name}' has been deleted successfully!")
+    return redirect('subject_list')
 
-# Create
-def add_class_subject(request):
-    if request.method == "POST":
-        form = ClassSubjectForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('class_subject_list')
-    else:
-        form = ClassSubjectForm()
-    return render(request, 'add_class_subject.html', {'form': form})
+#########################################################################################################
+#                                    CLASS - SUBJECT END POINTS                                         #
+#########################################################################################################
 
 # Read
 def class_subject_list(request):
-    class_subjects = ClassSubject.objects.all()
-    return render(request, 'class_subject_list.html', {'class_subjects': class_subjects})
+    classes = Class.objects.all().prefetch_related(
+        'sections',  # Prefetch related sections for each class
+        'sections__section_subjects__subject'  # Prefetch related subjects for each section
+    )
+    user = request.user
+    return render(request, 'list_class_subject.html', {
+        'page': 'Subject',
+        'user': user,
+        'classes': classes
+    })
+    
+# Create
+def add_class_subject(request):
+    user = request.user
+    classes = Class.objects.all().prefetch_related('sections', 'sections__section_subjects__subject')
+    available_subjects = Subject.objects.all()
+    
+    # Check if the request is an AJAX request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'GET':
+        class_id = request.GET.get('class_id')
+        sections = Section.objects.filter(class_name_id=class_id)
+        sections_data = [{"id": section.id, "name": section.name} for section in sections]
+        return JsonResponse({
+            'sections': sections_data})
+    
+    
+    return render(request, 'add_update_class_subject.html', {
+        'page': 'Subject',
+        'user': user,
+        'available_subjects' : available_subjects,
+        'classes': classes,
+    })
 
 # Update
 def update_class_subject(request, class_subject_id):
-    class_subject = get_object_or_404(ClassSubject, pk=class_subject_id)
-    if request.method == "POST":
-        form = ClassSubjectForm(request.POST, instance=class_subject)
-        if form.is_valid():
-            form.save()
-            return redirect('class_subject_list')
-    else:
-        form = ClassSubjectForm(instance=class_subject)
-    return render(request, 'update_class_subject.html', {'form': form})
+    class_subject = get_object_or_404(SectionSubject, pk=class_subject_id)
+    # if request.method == "POST":
+        # form = SectionSubjectForm(request.POST, instance=class_subject)
+        # if form.is_valid():
+        #     form.save()
+        #     return redirect('class_subject_list')
+    # else:
+        # form = SectionSubjectForm(instance=class_subject)
+    return render(request, 'add_update_class_subject.html')
 
 # Delete
 def delete_class_subject(request, class_subject_id):
-    class_subject = get_object_or_404(ClassSubject, pk=class_subject_id)
+    class_subject = get_object_or_404(SectionSubject, pk=class_subject_id)
     if request.method == "POST":
         class_subject.delete()
         return redirect('class_subject_list')

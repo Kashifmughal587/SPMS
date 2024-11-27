@@ -10,6 +10,29 @@
         <a href="{% url 'addstudent' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
             class="fas fa-user-plus fa-sm text-white-50"></i> New Admission</a>
     </div>
+    
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
     <!-- DataTales Example -->
     <div class="card shadow mb-4">

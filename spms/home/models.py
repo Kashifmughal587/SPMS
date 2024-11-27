@@ -20,6 +20,10 @@ class SchoolSession(models.Model):
     end_date = models.DateField()
     current = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        if self.current:
+            SchoolSession.objects.filter(school=self.school, current=True).update(current=False)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.start_date.year}-{self.end_date.year}"
 
@@ -50,12 +54,12 @@ class Subject(models.Model):
         return self.name
 
 # Class-Subject Model (Link Subjects to Classes)
-class ClassSubject(models.Model):
-    class_name = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="class_subjects")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="class_subjects")
+class SectionSubject(models.Model):
+    section_name = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="section_subjects")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="section_subjects")
     
     def __str__(self):
-        return f"{self.class_name.name} - {self.subject.name}"
+        return f"{self.section_name.name} - {self.subject.name}"
 
 # Student Enrollment Model (link students to classes and sections)
 class StudentEnrollment(models.Model):

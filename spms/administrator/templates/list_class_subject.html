@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-2 text-gray-800">Class - Subject</h1>
+        <a href="{% url 'add_class_subject' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-chalkboard-teacher fa-sm text-white-50"></i> Add New Subject
+        </a>
+    </div>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- DataTales Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Classes</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID#</th>
+                            <th>Class</th>
+                            <th>Section</th>
+                            <th>Subjects</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>ID#</th>
+                            <th>Class Name</th>
+                            <th>Section</th>
+                            <th>Subjects</th>
+                            <th>Action</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        {% for class in classes %}
+                            {% for section in class.sections.all %}
+                                <tr>
+                                    <td>{{ section.id }}</td>
+                                    <td>{{ class.name }}</td>
+                                    <td>{{ section.name }}</td>
+                                    <td>
+                                        {% if section.section_subjects.all %}
+                                            {% for section_subject in section.section_subjects.all %}
+                                                {{ section_subject.subject.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            No subjects
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'update_class' section.id %}" class="btn btn-sm btn-primary">Edit</a>
+                                        <button class="btn btn-sm btn-secondary" onclick="confirmDelete({{ section.id }})">Delete</button>
+                                        <form id="delete-form-{{ section.id }}" action="{% url 'delete_class' section.id %}" method="POST" style="display: none;">
+                                            {% csrf_token %}
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.container-fluid -->
+
+<!-- Confirmation Script -->
+<script>
+    function confirmDelete(classId) {
+        const confirmed = confirm("Deleting class will delete all it's associated items, Are you sure you want to remove all subjects from that class?");
+        if (confirmed) {
+            document.getElementById(`delete-form-${classId}`).submit();
+        }
+    }
+</script>
+
+{% endblock %}

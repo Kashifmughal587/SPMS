@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        {% if class_obj %} Update Class {% else %} Add Class {% endif %}
+    </h1>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% if class_obj %}{% url 'update_class' class_obj.id %}{% else %}{% url 'add_class' %}{% endif %}">
+        {% csrf_token %}
+        
+        <!-- Class Name -->
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="class_name">Class Name<span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="class_name" name="class_name" 
+                       value="{% if class_obj %}{{ class_obj.name }}{% endif %}" required>
+            </div>
+            <!-- Class Description -->
+            <div class="col-md-12 mb-3">
+                <label for="class_description">Class Description</label>
+                <textarea class="form-control" id="class_description" name="class_description">{% if class_obj %}{{ class_obj.description }}{% endif %}</textarea>
+            </div>            
+        </div>
+
+        <!-- Submit and Cancel Buttons -->
+        <button type="submit" class="btn btn-primary">{% if class_obj %} Update {% else %} Submit {% endif %}</button>
+        <a href="{% url 'class_list' %}" class="btn btn-secondary ml-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

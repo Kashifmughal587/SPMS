@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        {% if subject_obj %} Update Subject {% else %} Add Subject {% endif %}
+    </h1>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% if subject_obj %}{% url 'update_subject' subject_obj.id %}{% else %}{% url 'add_subject' %}{% endif %}">
+        {% csrf_token %}
+        
+        <!-- Subject Name -->
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="subject_name">Subject Name<span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="subject_name" name="subject_name" 
+                       value="{% if subject_obj %}{{ subject_obj.name }}{% endif %}" required>
+            </div>
+            <!-- Class Description -->
+            <div class="col-md-12 mb-3">
+                <label for="subject_description">Subject Description</label>
+                <textarea class="form-control" id="subject_description" name="subject_description">{% if subject_obj %}{{ subject_obj.description }}{% endif %}</textarea>
+            </div>            
+        </div>
+
+        <!-- Submit and Cancel Buttons -->
+        <button type="submit" class="btn btn-primary">{% if subject_obj %} Update {% else %} Submit {% endif %}</button>
+        <a href="{% url 'subject_list' %}" class="btn btn-secondary ml-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

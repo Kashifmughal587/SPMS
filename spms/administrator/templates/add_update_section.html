@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        {% if section_obj %} Update Section {% else %} Add Section {% endif %}
+    </h1>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "success" %}
+                <div class="alert alert-success">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "warning" %}
+                <div class="alert alert-warning">
+                    <p>{{ message }}</p>
+                </div>
+            {% elif message.tags == "info" %}
+                <div class="alert alert-info">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% if section_obj %}{% url 'update_section' section_obj.id %}{% else %}{% url 'add_section' %}{% endif %}">
+        {% csrf_token %}
+        
+        <!-- Section Name -->
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="class_id">Class<span class="redstaric">*</span></label>
+                <select class="form-control" id="class_id" name="class_id" required>
+                    <option value="">Select a Class</option>
+                    {% for class in classes %}
+                    <option value="{{ class.id }}" {% if section_obj and section_obj.class_name.id == class.id %}selected{% endif %}>
+                        {{ class.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="section_name">Section Name<span class="redstaric">*</span></label>
+                <input type="text" class="form-control" id="section_name" name="section_name" 
+                       value="{% if section_obj %}{{ section_obj.name }}{% endif %}" required>
+            </div>
+            <!-- Class Description -->
+            <div class="col-md-8 mb-3">
+                <label for="section_description">Section Description</label>
+                <textarea class="form-control" id="section_description" name="section_description">{% if section_obj %}{{ section_obj.description }}{% endif %}</textarea>
+            </div>            
+        </div>
+
+        <!-- Submit and Cancel Buttons -->
+        <button type="submit" class="btn btn-primary">{% if section_obj %} Update {% else %} Submit {% endif %}</button>
+        <a href="{% url 'section_list' %}" class="btn btn-secondary ml-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}
