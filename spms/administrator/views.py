@@ -31,6 +31,7 @@ def dashboard(request):
 #                                       STUDENT END POINTS                                              #
 #########################################################################################################
 
+@login_required
 def student_list(request):
     students = Student.objects.select_related(
         'family', 
@@ -54,7 +55,8 @@ def student_list(request):
         'student_list': students,
         'user': request.user
     })
-    
+
+@login_required
 def add_student(request):
     if request.method == 'POST':
         required_fields = ['roll_number', 'birth_certificate', 'first_name', 'last_name', 'dob', 
@@ -195,7 +197,8 @@ def add_student(request):
             'user' : user,
             'reg_no': new_registration_number
             })
-    
+
+@login_required
 def student_detail(request, student_id):
     return (request)
 
@@ -238,6 +241,7 @@ def student_detail(request, student_id):
 #########################################################################################################
 
 # Read
+@login_required
 def class_list(request):
     classes = Class.objects.all()
     user = request.user
@@ -248,6 +252,7 @@ def class_list(request):
         })
 
 # Create
+@login_required
 def add_class(request):
     if request.method == "POST":
         required_fields = ['class_name']
@@ -293,6 +298,8 @@ def add_class(request):
             'user' : user
             })
 
+# Update
+@login_required
 def update_class(request, class_id):
     class_obj = get_object_or_404(Class, pk=class_id)
     user = request.user
@@ -333,6 +340,7 @@ def update_class(request, class_id):
     })
 
 # Delete
+@login_required
 def delete_class(request, class_id):
     class_obj = get_object_or_404(Class, pk=class_id)
     class_obj.delete()
@@ -344,6 +352,7 @@ def delete_class(request, class_id):
 #########################################################################################################
 
 # Read
+@login_required
 def section_list(request):
     sections = Section.objects.all()
     user = request.user
@@ -354,6 +363,7 @@ def section_list(request):
         })
     
 # Create
+@login_required
 def add_section(request):
     user = request.user
     if request.method == "POST":
@@ -398,6 +408,7 @@ def add_section(request):
         })
 
 # Update
+@login_required
 def update_section(request, section_id):
     section_obj = get_object_or_404(Section, pk=section_id)
     user = request.user
@@ -443,6 +454,7 @@ def update_section(request, section_id):
         })
 
 # Delete
+@login_required
 def delete_section(request, section_id):
     section = get_object_or_404(Section, pk=section_id)
     section.delete()
@@ -454,6 +466,7 @@ def delete_section(request, section_id):
 #########################################################################################################
 
 # Read
+@login_required
 def subject_list(request):
     subjects = Subject.objects.all()
     user = request.user
@@ -463,6 +476,7 @@ def subject_list(request):
         'subjects': subjects})
     
 # Create
+@login_required
 def add_subject(request):
     user = request.user
     if request.method == "POST":
@@ -501,6 +515,7 @@ def add_subject(request):
 
 
 # Update
+@login_required
 def update_subject(request, subject_id):
     subject_obj = get_object_or_404(Subject, pk=subject_id)
     user = request.user
@@ -542,6 +557,7 @@ def update_subject(request, subject_id):
     })
 
 # Delete
+@login_required
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, pk=subject_id)
     subject.delete()
@@ -553,10 +569,11 @@ def delete_subject(request, subject_id):
 #########################################################################################################
 
 # Read
+@login_required
 def class_subject_list(request):
     classes = Class.objects.all().prefetch_related(
-        'sections',  # Prefetch related sections for each class
-        'sections__section_subjects__subject'  # Prefetch related subjects for each section
+        'sections',
+        'sections__section_subjects__subject'
     )
     user = request.user
     return render(request, 'list_class_subject.html', {
@@ -566,19 +583,65 @@ def class_subject_list(request):
     })
     
 # Create
+@login_required
 def add_class_subject(request):
     user = request.user
     classes = Class.objects.all().prefetch_related('sections', 'sections__section_subjects__subject')
     available_subjects = Subject.objects.all()
     
-    # Check if the request is an AJAX request
+    if request.method == "POST":
+        required_fields = ['class_id', 'section_id', 'added_subjects']
+        user = request.user
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
+            return render(request, 'add_update_class_subject.html', {
+                'page': 'Subject',
+                'user': user,
+                'available_subjects': available_subjects,
+                'classes': classes,
+            })
+        
+        class_id = request.POST.get('class_id')
+        section_id = request.POST.get('section_id')
+        added_subjects = request.POST.getlist('added_subjects')
+        
+        section = Section.objects.get(id=section_id, class_name_id=class_id)
+        
+        existing_subjects = set(section.section_subjects.values_list('subject_id', flat=True))
+        new_subjects = set(map(int, added_subjects))
+        
+        subjects_to_add = new_subjects - existing_subjects
+        
+        subjects_to_remove = existing_subjects - new_subjects
+        
+        section.section_subjects.filter(subject_id__in=subjects_to_remove).delete()
+        
+        for subject_id in subjects_to_add:
+            subject = Subject.objects.get(id=subject_id)
+            section.section_subjects.create(subject=subject)
+        
+        messages.success(request, "Subjects successfully updated for the section.")
+        return redirect('class_subject_list')
+        
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'GET':
         class_id = request.GET.get('class_id')
-        sections = Section.objects.filter(class_name_id=class_id)
-        sections_data = [{"id": section.id, "name": section.name} for section in sections]
-        return JsonResponse({
-            'sections': sections_data})
-    
+        section_id = request.GET.get('section_id')
+
+        if section_id:
+            added_subjects = SectionSubject.objects.filter(section_name_id=section_id).select_related('subject')
+            added_subjects_data = [{"id": subject.subject.id, "name": subject.subject.name} for subject in added_subjects]
+
+            return JsonResponse({
+                'added_subjects': added_subjects_data
+            })
+        
+        if class_id:
+            sections = Section.objects.filter(class_name_id=class_id)
+            sections_data = [{"id": section.id, "name": section.name} for section in sections]
+            return JsonResponse({
+                'sections': sections_data
+            })
     
     return render(request, 'add_update_class_subject.html', {
         'page': 'Subject',
@@ -587,22 +650,9 @@ def add_class_subject(request):
         'classes': classes,
     })
 
-# Update
-def update_class_subject(request, class_subject_id):
-    class_subject = get_object_or_404(SectionSubject, pk=class_subject_id)
-    # if request.method == "POST":
-        # form = SectionSubjectForm(request.POST, instance=class_subject)
-        # if form.is_valid():
-        #     form.save()
-        #     return redirect('class_subject_list')
-    # else:
-        # form = SectionSubjectForm(instance=class_subject)
-    return render(request, 'add_update_class_subject.html')
-
-# Delete
-def delete_class_subject(request, class_subject_id):
-    class_subject = get_object_or_404(SectionSubject, pk=class_subject_id)
-    if request.method == "POST":
-        class_subject.delete()
-        return redirect('class_subject_list')
-    return render(request, 'delete_class_subject.html', {'class_subject': class_subject})
+# Clear All Subjects
+@login_required
+def clear_class_subject(request, section_name_id):
+    section_subjects = SectionSubject.objects.filter(section_name_id=section_name_id)
+    section_subjects.delete()
+    return redirect('class_subject_list')

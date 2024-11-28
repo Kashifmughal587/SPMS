@@ -15,7 +15,7 @@
         {% endfor %}
     {% endif %}
 
-    <form method="post" action="{% if obj %}{% url 'update_section' obj.id %}{% else %}{% url 'add_section' %}{% endif %}">
+    <form method="post" action="{% if obj %}{% url 'update_class_subject' obj.id %}{% else %}{% url 'add_class_subject' %}{% endif %}">
         {% csrf_token %}
         
         <!-- Section Name -->
@@ -48,17 +48,17 @@
 
         <!-- Add Subjects to Section -->
         <div class="form-row">
-            <!-- Available Subjects (5) -->
+            <!-- Available Subjects -->
             <div class="col-md-5 mb-3">
                 <label for="available_subjects">Available Subjects</label>
-                <select multiple class="form-control" id="available_subjects">
+                <select multiple class="form-control" id="available_subjects" name="available_subjects">
                     {% for subject in available_subjects %}
                     <option value="{{ subject.id }}">{{ subject.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             
-            <!-- Buttons (2) -->
+            <!-- Buttons -->
             <div class="col-md-2 mb-3 d-flex flex-column justify-content-center align-items-center">
                 <button type="button" class="btn btn-primary mb-2" id="add_subjects_btn">Add &gt;</button>
                 <button type="button" class="btn btn-primary mb-2" id="remove_subjects_btn">&lt; Remove</button>
@@ -66,10 +66,10 @@
                 <button type="button" class="btn btn-secondary" id="remove_all_subjects_btn">Remove All</button>
             </div>
             
-            <!-- Added Subjects (5) -->
+            <!-- Added Subjects -->
             <div class="col-md-5 mb-3">
                 <label for="added_subjects">Added Subjects</label>
-                <select multiple class="form-control" id="added_subjects">
+                <select multiple class="form-control" id="added_subjects" name="added_subjects">
                     {% for subject in added_subjects %}
                     <option value="{{ subject.id }}">{{ subject.name }}</option>
                     {% endfor %}
@@ -87,7 +87,9 @@
     // Handle class selection change to load sections dynamically
     document.getElementById('class_id').addEventListener('change', function() {
         var classId = this.value;
-        console.log(classId);
+        
+        var addedSubjects = document.getElementById('added_subjects');
+        addedSubjects.innerHTML = '';
         if (classId) {
             fetch(`/administrator/add_class_subject/?class_id=${classId}`, {
                 method: 'GET',
@@ -117,6 +119,55 @@
         }
     });
 
+    document.getElementById('section_id').addEventListener('change', function () {
+        const sectionId = this.value;
+        const classId = document.getElementById('class_id').value;
+    
+        if (sectionId) {
+            fetch(`/administrator/add_class_subject/?class_id=${classId}&section_id=${sectionId}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Populate already added subjects
+                const addedSubjects = document.getElementById('added_subjects');
+
+                addedSubjects.innerHTML = '';
+                const addedSubjectIds = new Set();
+                
+                data.added_subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject.id;
+                    option.textContent = subject.name;
+                    addedSubjects.appendChild(option);
+                    addedSubjectIds.add(subject.id);
+                });
+
+                const availableSubjects = document.getElementById('available_subjects');
+
+                for (let i = 0; i < availableSubjects.options.length; i++) {
+                    const option = availableSubjects.options[i];
+                    const optionValue = parseInt(option.value);
+                    if (addedSubjectIds.has(optionValue)) {
+                        availableSubjects.remove(i);
+                        i--;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }
+    });
+    
     // Handle adding and removing subjects
     document.getElementById('add_subjects_btn').addEventListener('click', function() {
         var availableSubjects = document.getElementById('available_subjects');
@@ -158,18 +209,44 @@
 
     // Double click to add subjects
     document.getElementById('available_subjects').addEventListener('dblclick', function(e) {
-        if (e.target.tagName === 'OPTION') {
-            var addedSubjects = document.getElementById('added_subjects');
-            addedSubjects.appendChild(e.target);
-        }
+        var availableSubjects = document.getElementById('available_subjects');
+        var addedSubjects = document.getElementById('added_subjects');
+        var selectedOptions = [...availableSubjects.selectedOptions];
+        selectedOptions.forEach(function(option) {
+            addedSubjects.appendChild(option);
+        });
     });
 
     // Double click to remove subjects
     document.getElementById('added_subjects').addEventListener('dblclick', function(e) {
-        if (e.target.tagName === 'OPTION') {
-            var availableSubjects = document.getElementById('available_subjects');
-            availableSubjects.appendChild(e.target);
-        }
+        var availableSubjects = document.getElementById('available_subjects');
+        var addedSubjects = document.getElementById('added_subjects');
+        var selectedOptions = [...addedSubjects.selectedOptions];
+        selectedOptions.forEach(function(option) {
+            availableSubjects.appendChild(option);
+        });
+    });
+
+    // Validate for Added Subjects 
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form");
+        const addedSubjects = document.getElementById("added_subjects");
+
+        form.addEventListener("submit", function (event) {
+
+            if (addedSubjects.options.length === 0) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'added_subjects';
+                input.value = '';
+                form.appendChild(input);
+            }
+            
+            if (addedSubjects.options.length === 0) {
+                alert("Please add at least one subject before submitting.");
+                event.preventDefault();
+            }
+        });
     });
 </script>
 {% endblock %}

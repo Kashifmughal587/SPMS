@@ -61,7 +61,7 @@
             <!-- Nav Item - Students -->
             <li class="nav-item {% if page == 'Students' %}active{% endif %}">
                 <a class="nav-link" href="{% url 'studentlist' %}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <i class="fas fa-user-graduate"></i>
                     <span>Students</span></a>
             </li>
 
@@ -73,39 +73,39 @@
                 Academics
             </div>
 
-            <!-- Nav Item - Classes -->
-            <li class="nav-item {% if page == 'Class' %}active{% endif %}">
-                <a class="nav-link" href="{% url 'class_list' %}">
-                    <i class="fas fa-chalkboard"></i>
-                    <span>Class</span></a>
-            </li>
-            <!-- Nav Item - Sections -->
-            <li class="nav-item {% if page == 'Section' %}active{% endif %}">
-                <a class="nav-link" href="{% url 'section_list' %}">
-                    <i class="fas fa-columns"></i>
-                    <span>Section</span></a>
-            </li>
-            <!-- Nav Item - Subjects -->
-            {% comment %} <li class="nav-item {% if page == 'Subject' %}active{% endif %}">
-                <a class="nav-link" href="{% url 'subject_list' %}">
-                    <i class="fas fa-book"></i>
-                    <span>Subject</span></a>
-            </li> {% endcomment %}
-
             <!-- Nav Item - Subjects Menu -->
             <li class="nav-item {% if page == 'Subject' %}active{% endif %}">
                 <a class="nav-link collapsed" href="{% url 'subject_list' %}" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-book"></i>
-                    <span>Subject</span>
+                    <span>Curriculum</span>
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Component:</h6>
+                        <a class="collapse-item" href="{% url 'class_list' %}">Classes</a>
+                        <a class="collapse-item" href="{% url 'section_list' %}">Sections</a>
+                        <a class="collapse-item" href="{% url 'subject_list' %}">Subjects</a>
                         <a class="collapse-item" href="{% url 'class_subject_list' %}">Class Subjects</a>
                     </div>
                 </div>
             </li>
+
+            <!-- Nav Item - Subjects Menu -->
+            {% comment %} <li class="nav-item {% if page == 'Subject' %}active{% endif %}">
+                <a class="nav-link collapsed" href="{% url 'subject_list' %}" data-toggle="collapse" data-target="#collapseThree"
+                    aria-expanded="true" aria-controls="collapseThree">
+                    <i class="fas fa-book"></i>
+                    <span>Academics</span>
+                </a>
+                <div id="collapseThree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="{% url 'class_list' %}">Classes</a>
+                        <a class="collapse-item" href="{% url 'section_list' %}">Sections</a>
+                        <a class="collapse-item" href="{% url 'subject_list' %}">Subjects</a>
+                        <a class="collapse-item" href="{% url 'class_subject_list' %}">Class Subjects</a>
+                    </div>
+                </div>
+            </li> {% endcomment %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">

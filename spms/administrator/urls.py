@@ -30,6 +30,5 @@ urlpatterns = [
 
     path('class_subjects/', views.class_subject_list, name='class_subject_list'),
     path('add_class_subject/', views.add_class_subject, name='add_class_subject'),
-    path('update_class_subject/<int:class_subject_id>/', views.update_class_subject, name='update_class_subject'),
-    path('delete_class_subject/<int:class_subject_id>/', views.delete_class_subject, name='delete_class_subject'),
+    path('clear_class_subject/<int:section_name_id>/', views.clear_class_subject, name='clear_class_subject'),
 ]
