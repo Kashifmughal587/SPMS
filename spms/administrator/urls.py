@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.dashboard, name='admindashboard'),
     
     path('students/', views.student_list, name="studentlist"),
+    path('studentsbyclass/', views.student_list_by_class, name="studentlistbyclass"),
     path('addstudent/', views.add_student, name="addstudent"),
     path('studentdetail/<int:student_id>/', views.student_detail, name="studentdetail"),
     

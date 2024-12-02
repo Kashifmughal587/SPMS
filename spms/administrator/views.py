@@ -1,12 +1,14 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
-from home.models import Class, Section, Subject, SectionSubject, SchoolSession
+from django.contrib.auth.models import User, Group
+from home.models import Class, Section, Subject, SectionSubject, SchoolSession, StudentEnrollment
 from students.models import Student
 from parents.models import Family, Parent
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
+from django.db import transaction
+import json
 
 #########################################################################################################
 #                                               DASHBOARD                                               #
@@ -34,167 +36,298 @@ def dashboard(request):
 @login_required
 def student_list(request):
     students = Student.objects.select_related(
-        'family', 
-        'family__guardian_id', 
+        'family',
+        'family__guardian_id',
         'family__guardian_id__user'
+    ).prefetch_related(
+        'user__enrollments_set__class_name',
+        'user__enrollments_set__section'
     ).values(
-        'id', 
-        'registration_number', 
-        'user__first_name', 
+        'id',
+        'registration_number',
+        'user__first_name',
         'user__last_name',
-        'family__family_id', 
-        'family__guardian_id__user__first_name', 
+        'family__family_id',
+        'family__guardian_id__user__first_name',
         'family__guardian_id__user__last_name',
-        'gender'
+        'gender',
+        'user__enrollments__class_name__name',  # Assuming class_name has a 'name' field
+        'user__enrollments__section__name'      # Assuming section has a 'name' field
     )
 
     user = request.user
     return render(request, 'list_students.html', {
         'page': 'Students',
-        'user' : user,
+        'user': user,
         'student_list': students,
         'user': request.user
     })
+    
+@login_required
+def student_list_by_class(request):
+    classes = Class.objects.all().prefetch_related('sections')
+    current_session = SchoolSession.objects.filter(current=True).first()
+
+    # AJAX request for sections
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'GET':
+        class_id = request.GET.get('class_id')
+        if class_id:
+            sections = Section.objects.filter(class_name_id=class_id)
+            sections_data = [{"id": section.id, "name": section.name} for section in sections]
+            return JsonResponse({'sections': sections_data})
+
+    # Retrieve selected class and section IDs
+    selected_class_id = request.GET.get('class_id')
+    selected_section_id = request.GET.get('section_id')
+
+    # Filter students based on selected criteria
+    students = StudentEnrollment.objects.filter(
+        academic_year=f"{current_session.start_date.year}-{current_session.end_date.year}" if current_session else None,
+        class_name_id=selected_class_id if selected_class_id else None,
+        section_id=selected_section_id if selected_section_id else None,
+        status='active'
+    ).select_related(
+        'student',  # This references the Student model
+        'student__family__guardian__user',  # Include deeper relationships
+        'class_name',
+        'section'
+    ).only(
+        'student__registration_number',  # Field on Student
+        'student__user__first_name',    # Use user field of Student
+        'student__user__last_name',
+        'student__gender',
+        'class_name__name',
+        'section__name'
+    )
+
+    # Get sections if a class is selected
+    sections = Section.objects.filter(class_name_id=selected_class_id).only('id', 'name') if selected_class_id else None
+
+    return render(request, 'list_student_by_class.html', {
+        'page': 'Students',
+        'classes': classes,
+        'sections': sections,
+        'student_list': students,
+        'selected_class_id': selected_class_id,
+        'selected_section_id': selected_section_id,
+    })
+
+    # Get sections if a class is selected
+    sections = Section.objects.filter(class_name_id=selected_class_id).only('id', 'name') if selected_class_id else None
+
+    return render(request, 'list_student_by_class.html', {
+        'page': 'Students',
+        'classes': classes,
+        'sections': sections,
+        'student_list': students,
+        'selected_class_id': selected_class_id,
+        'selected_section_id': selected_section_id,
+    })
+
 
 @login_required
 def add_student(request):
+    classes = Class.objects.all().prefetch_related('sections', 'sections__section_subjects__subject')
     if request.method == 'POST':
-        required_fields = ['roll_number', 'birth_certificate', 'first_name', 'last_name', 'dob', 
-                           'gender', 'religion', 'emergency_contact', 'address', 'city', 'state', 'country']
+        with transaction.atomic():  # Start a transaction
+            required_fields = ['roll_number', 'birth_certificate', 'first_name', 'last_name', 'dob', 
+                               'gender', 'religion', 'emergency_contact', 'address', 'city', 'state', 'country']
+            
+            missing_fields = [field for field in required_fields if not request.POST.get(field)]
+            if missing_fields:
+                messages.error(request, f"Please fill in all required fields: {', '.join(missing_fields)}.")
+                return render(request, 'add_update_student.html', {
+                    'page': 'Students',
+                    'user': request.user,
+                    'classes': classes,
+                    'reg_no': request.POST.get('registration_number')
+                })
+            
+            # Extract and assign fields
+            class_id = request.POST.get('class_id')
+            section_id = request.POST.get('section_id')
+            registration_number = request.POST.get('registration_number')
+            roll_number = request.POST.get('roll_number')
+            birth_certificate = request.POST.get('birth_certificate')
+            first_name = request.POST.get('first_name').strip()
+            last_name = request.POST.get('last_name').strip()
+            dob = request.POST.get('dob')
+            gender = request.POST.get('gender')
+            religion = request.POST.get('religion')
+            blood_group = request.POST.get('blood_group', None)
+            contact_number = request.POST.get('contact_number', None)
+            emergency_contact = request.POST.get('emergency_contact')
+            profile_picture = request.FILES.get('profile_picture', None)
+            address = request.POST.get('address')
+            city = request.POST.get('city')
+            state = request.POST.get('state')
+            country = request.POST.get('country')
+            admission_date = request.POST.get('admission_date', timezone.now())
+            same_as_current = request.POST.get('same_as_present') == 'on'
+            
+            permanent_address = address if same_as_current else request.POST.get('permanent_address', None)
+            permanent_city = city if same_as_current else request.POST.get('permanent_city', None)
+            permanent_state = state if same_as_current else request.POST.get('permanent_state', None)
+            permanent_country = country if same_as_current else request.POST.get('permanent_country', None)
+            
+            guardian = request.POST.get('guardian', None)
+            guardian_data = {  # Guardian details
+                'father': {
+                    'first_name': request.POST.get('father_first_name').strip(),
+                    'last_name': request.POST.get('father_last_name').strip(),
+                    'cnic': request.POST.get('father_cnic'),
+                    'email': request.POST.get('father_email'),
+                    'phone_number': request.POST.get('father_mobile'),
+                    'whatsapp': request.POST.get('father_whatsapp'),
+                    'education': request.POST.get('father_education'),
+                    'profession': request.POST.get('father_profession'),
+                    'relationship': 'Father',
+                },
+                'mother': {
+                    'first_name': request.POST.get('mother_first_name').strip(),
+                    'last_name': request.POST.get('mother_last_name').strip(),
+                    'cnic': request.POST.get('mother_cnic'),
+                    'email': request.POST.get('mother_email'),
+                    'phone_number': request.POST.get('mother_mobile'),
+                    'whatsapp': request.POST.get('mother_whatsapp'),
+                    'education': request.POST.get('mother_education'),
+                    'profession': request.POST.get('mother_profession'),
+                    'relationship': 'Mother',
+                },
+            }
+            # Ensure section exists
+            try:
+                section = Section.objects.get(id=section_id, class_name_id=class_id)
+            except Section.DoesNotExist:
+                messages.error(request, "Invalid section or class selected.")
+                return render(request, 'add_update_student.html', {
+                    'page': 'Students',
+                    'user': request.user,
+                    'classes': classes,
+                    'reg_no': request.POST.get('registration_number')
+                })
+            
+            # Create Student User
+            username = birth_certificate
+            password = f"password{username[-4:]}"
+            if User.objects.filter(username=username).exists():
+                messages.error(request, "This student already exists.")
+                return render(request, 'add_update_student.html', {
+                    'page': 'Students',
+                    'user': request.user,
+                    'classes': classes,
+                    'reg_no': registration_number
+                })
+            student_user = User.objects.create_user(username=username, password=password, first_name=first_name, last_name=last_name)
+            
+            # Assign the student to the "Student" group
+            student_group, created = Group.objects.get_or_create(name='Student')
+            student_user.groups.add(student_group)
+
+            # Create or retrieve Family
+            last_family = Family.objects.order_by('-id').first()
+            new_family_id = f"FAM{(int(last_family.family_id[3:]) + 1) if last_family else 1:04d}"
+            family, _ = Family.objects.get_or_create(family_id=new_family_id)
+
+            # Save Student
+            student = Student.objects.create(
+                user=student_user,
+                registration_number=registration_number,
+                cnic=birth_certificate,
+                family=family,
+                dob=dob,
+                gender=gender,
+                religion=religion,
+                blood_group=blood_group,
+                address=address,
+                city=city,
+                state=state,
+                country=country,
+                permanent_address=permanent_address,
+                permanent_city=permanent_city,
+                permanent_state=permanent_state,
+                permanent_country=permanent_country,
+                phone_number=contact_number,
+                profile_picture=profile_picture,
+                admission_date=admission_date,
+                emergency_contact=emergency_contact,
+            )
+
+            # Set academic_year from the current session
+            current_session = SchoolSession.objects.filter(current=True).first()
+            academic_year = f"{current_session.start_date.year}-{current_session.end_date.year}" if current_session else f"{timezone.now().year}-{timezone.now().year + 1}"
+
+            # Enroll Student
+            StudentEnrollment.objects.create(
+                student=student_user,
+                class_name_id=class_id,
+                section_id=section_id,
+                academic_year=academic_year,
+                roll_number=roll_number,
+            )
+
+            # Add Guardian Information
+            guardian_instance = None
+            parent_group, created = Group.objects.get_or_create(name='Parent')  # Ensure Parent group exists
+            
+            for relation, data in guardian_data.items():
+                if data['cnic']:
+                    guardian_username = data['cnic']
+                    guardian_password = f"password{guardian_username[-4:]}"
+                    if User.objects.filter(username=guardian_username).exists():
+                        messages.error(request, f"{data['relationship']} CNIC already exists.")
+                        return render(request, 'add_update_student.html', {
+                            'page': 'Students',
+                            'user': request.user,
+                            'classes': classes,
+                            'reg_no': registration_number
+                        })
+                    guardian_user = User.objects.create_user(
+                        username=guardian_username, 
+                        email=data['email'], 
+                        password=guardian_password, 
+                        first_name=data['first_name'], 
+                        last_name=data['last_name']
+                    )
+                    
+                    # Assign the guardian to the "Parent" group
+                    guardian_user.groups.add(parent_group)
+                    
+                    parent = Parent.objects.create(
+                        user=guardian_user,
+                        cnic=data['cnic'],
+                        phone_number=data['phone_number'],
+                        whatsapp_number=data['whatsapp'],
+                        education=data['education'],
+                        profession=data['profession'],
+                        relationship=data['relationship'],
+                        address=permanent_address,
+                        family=family,
+                    )
+                    if not guardian_instance:
+                        guardian_instance = parent
+            family.guardian = guardian_instance
+            family.save()
+
+            messages.success(request, 'Student added successfully!')
+            return redirect('studentlist')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'GET':
+        class_id = request.GET.get('class_id')
         
-        missing_fields = [field for field in required_fields if not request.POST.get(field)]
-        if missing_fields:
-            messages.error(request, f"Please fill in all required fields: {', '.join(missing_fields)}.")
-            return render(request, 'add_student.html', {'reg_no': request.POST.get('registration_number')})
-        
-        # Extracting and assigning fields
-        registration_number = request.POST.get('registration_number')
-        roll_number = request.POST.get('roll_number')
-        birth_certificate = request.POST.get('birth_certificate')
-        first_name = request.POST.get('first_name').strip()
-        last_name = request.POST.get('last_name').strip()
-        dob = request.POST.get('dob')
-        gender = request.POST.get('gender')
-        religion = request.POST.get('religion')
-        blood_group = request.POST.get('blood_group', None)
-        contact_number = request.POST.get('contact_number', None)
-        emergency_contact = request.POST.get('emergency_contact')
-        profile_picture = request.FILES.get('profile_picture', None)
-        address = request.POST.get('address')
-        city = request.POST.get('city')
-        state = request.POST.get('state')
-        country = request.POST.get('country')
-        admission_date = request.POST.get('admission_date', timezone.now())
-        same_as_current = request.POST.get('same_as_present') == 'on'
-        
-        permanent_address = address if same_as_current else request.POST.get('permanent_address', None)
-        permanent_city = city if same_as_current else request.POST.get('permanent_city', None)
-        permanent_state = state if same_as_current else request.POST.get('permanent_state', None)
-        permanent_country = country if same_as_current else request.POST.get('permanent_country', None)
-        
-        guardian = request.POST.get('guardian', None)
-
-        # Guardian details
-        guardian_data = {
-            'father': {
-                'first_name': request.POST.get('father_first_name').strip(),
-                'last_name': request.POST.get('father_last_name').strip(),
-                'cnic': request.POST.get('father_cnic'),
-                'email': request.POST.get('father_email'),
-                'phone_number': request.POST.get('father_mobile'),
-                'whatsapp': request.POST.get('father_whatsapp'),
-                'education': request.POST.get('father_education'),
-                'profession': request.POST.get('father_profession'),
-                'relationship': 'Father',
-            },
-            'mother': {
-                'first_name': request.POST.get('mother_first_name').strip(),
-                'last_name': request.POST.get('mother_last_name').strip(),
-                'cnic': request.POST.get('mother_cnic'),
-                'email': request.POST.get('mother_email'),
-                'phone_number': request.POST.get('mother_mobile'),
-                'whatsapp': request.POST.get('mother_whatsapp'),
-                'education': request.POST.get('mother_education'),
-                'profession': request.POST.get('mother_profession'),
-                'relationship': 'Mother',
-            },
-        }
-
-        # Create Student User
-        username = birth_certificate
-        password = f"password{username[-4:]}"
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "This student already exists.")
-            return render(request, 'add_student.html', {'reg_no': registration_number})
-
-        student_user = User.objects.create_user(username=username, password=password, first_name=first_name, last_name=last_name)
-
-        # Create or retrieve Family
-        last_family = Family.objects.order_by('-id').first()
-        new_family_id = f"FAM{(int(last_family.family_id[3:]) + 1) if last_family else 1:04d}"
-        family, _ = Family.objects.get_or_create(family_id=new_family_id)
-
-        # Save Student
-        student = Student.objects.create(
-            user=student_user,
-            registration_number=registration_number,
-            cnic=birth_certificate,
-            family=family,
-            dob=dob,
-            gender=gender,
-            religion=religion,
-            blood_group=blood_group,
-            address=address,
-            city=city,
-            state=state,
-            country=country,
-            permanent_address=permanent_address,
-            permanent_city=permanent_city,
-            permanent_state=permanent_state,
-            permanent_country=permanent_country,
-            phone_number=contact_number,
-            roll_number=roll_number,
-            profile_picture=profile_picture,
-            admission_date=admission_date,
-            emergency_contact=emergency_contact,
-        )
-
-        # Add Guardian Information
-        for relation, data in guardian_data.items():
-            if data['cnic']:
-                guardian_username = data['cnic']
-                guardian_password = f"password{guardian_username[-4:]}"
-                if User.objects.filter(username=guardian_username).exists():
-                    messages.error(request, f"{data['relationship']} CNIC already exists.")
-                    return render(request, 'add_student.html', {'reg_no': registration_number})
-                
-                guardian_user = User.objects.create_user(username=guardian_username, email=data['email'], 
-                                                         password=guardian_password, first_name=data['first_name'], 
-                                                         last_name=data['last_name'])
-                Parent.objects.create(
-                    user=guardian_user,
-                    cnic=data['cnic'],
-                    phone_number=data['phone_number'],
-                    whatsapp_number=data['whatsapp'],
-                    education=data['education'],
-                    profession=data['profession'],
-                    relationship=data['relationship'],
-                    address=permanent_address,
-                    family=family,
-                )
-        
-        family.guardian = guardian
-        family.save()
-
-        messages.success(request, 'Student added successfully!')
-        return redirect('studentlist')
+        if class_id:
+            sections = Section.objects.filter(class_name_id=class_id)
+            sections_data = [{"id": section.id, "name": section.name} for section in sections]
+            return JsonResponse({
+                'sections': sections_data
+            })
     else:
         last_student = Student.objects.order_by('-id').first()
         new_registration_number = f"REG{(int(last_student.registration_number[3:]) + 1) if last_student else 1:04d}"
         user = request.user
-        return render(request, 'add_student.html', {
+        return render(request, 'add_update_student.html', {
             'page': 'Students',
             'user' : user,
+            'classes' : classes,
             'reg_no': new_registration_number
             })
 
@@ -246,7 +379,7 @@ def class_list(request):
     classes = Class.objects.all()
     user = request.user
     return render(request, 'list_classes.html', {
-        'page': 'Class',
+        'page': 'Curriculum',
         'user' : user,
         'classes': classes
         })
@@ -261,7 +394,7 @@ def add_class(request):
         if missing_fields:
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             return render(request, 'add_update_class.html', {
-                'page': 'Class',
+                'page': 'Curriculum',
                 'user' : user,
                 })
         
@@ -269,7 +402,7 @@ def add_class(request):
         if not current_session:
             messages.error(request, "No current school session is active. Please set one before adding a class.")
             return render(request, 'add_update_class.html', {
-                'page': 'Class',
+                'page': 'Curriculum',
                 'user' : user,
                 })
             
@@ -279,7 +412,7 @@ def add_class(request):
         if Class.objects.filter(name__iexact=class_name).exists():
             messages.error(request, f"A Class with the name '{class_name}' already exists!")
             return render(request, 'add_update_class.html', {
-                'page': 'Class',
+                'page': 'Curriculum',
                 'user' : user,
                 })
 
@@ -294,7 +427,7 @@ def add_class(request):
     else:
         user = request.user
         return render(request, 'add_update_class.html', {
-            'page': 'Class',
+            'page': 'Curriculum',
             'user' : user
             })
 
@@ -310,7 +443,7 @@ def update_class(request, class_id):
         if missing_fields:
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             return render(request, 'add_update_class.html', {
-                'page': 'Class',
+                'page': 'Curriculum',
                 'user': user,
                 'class_obj': class_obj,
             })
@@ -321,7 +454,7 @@ def update_class(request, class_id):
         if Class.objects.filter(name__iexact=class_name).exclude(pk=class_obj.pk).exists():
             messages.error(request, f"A Class with the name '{class_name}' already exists!")
             return render(request, 'add_update_class.html', {
-                'page': 'Class',
+                'page': 'Curriculum',
                 'user': user,
                 'class_obj': class_obj,
             })
@@ -334,7 +467,7 @@ def update_class(request, class_id):
         return redirect('class_list')
 
     return render(request, 'add_update_class.html', {
-        'page': 'Class',
+        'page': 'Curriculum',
         'user': user,
         'class_obj': class_obj,
     })
@@ -357,7 +490,7 @@ def section_list(request):
     sections = Section.objects.all()
     user = request.user
     return render(request, 'list_sections.html', {
-        'page': 'Section',
+        'page': 'Curriculum',
         'user' : user,
         'sections': sections
         })
@@ -373,7 +506,7 @@ def add_section(request):
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             classes = Class.objects.all()
             return render(request, 'add_update_section.html', {
-                'page': 'Section',
+                'page': 'Curriculum',
                 'user' : user,
                 'classes' : classes
                 })
@@ -387,7 +520,7 @@ def add_section(request):
             messages.error(request, f"A section with the name '{section_name}' already exists in class '{class_obj.name}'.")
             classes = Class.objects.all()
             return render(request, 'add_update_section.html', {
-                'page': 'Section',
+                'page': 'Curriculum',
                 'user': user,
                 'classes': classes
             })
@@ -402,7 +535,7 @@ def add_section(request):
     else:
         classes = Class.objects.all()
     return render(request, 'add_update_section.html', {
-        'page': 'Section',
+        'page': 'Curriculum',
         'user' : user,
         'classes' : classes
         })
@@ -419,7 +552,7 @@ def update_section(request, section_id):
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             classes = Class.objects.all()
             return render(request, 'add_update_section.html', {
-                'page': 'Section',
+                'page': 'Curriculum',
                 'user' : user,
                 'classes' : classes
                 })
@@ -433,7 +566,7 @@ def update_section(request, section_id):
             messages.error(request, f"A section with the name '{section_name}' already exists in class '{class_obj.name}'.")
             classes = Class.objects.all()
             return render(request, 'add_update_section.html', {
-                'page': 'Section',
+                'page': 'Curriculum',
                 'user': user,
                 'classes': classes,
                 'section_obj': section_obj
@@ -447,7 +580,7 @@ def update_section(request, section_id):
     else:
         classes = Class.objects.all()
     return render(request, 'add_update_section.html', {
-        'page': 'Section',
+        'page': 'Curriculum',
         'user' : user,
         'classes' : classes,
         'section_obj' : section_obj
@@ -471,7 +604,7 @@ def subject_list(request):
     subjects = Subject.objects.all()
     user = request.user
     return render(request, 'list_subjects.html', {
-        'page': 'Subject',
+        'page': 'Curriculum',
         'user' : user,
         'subjects': subjects})
     
@@ -486,7 +619,7 @@ def add_subject(request):
         if missing_fields:
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             return render(request, 'add_update_subject.html', {
-                'page': 'Subject',
+                'page': 'Curriculum',
                 'user' : user,
                 })
             
@@ -496,7 +629,7 @@ def add_subject(request):
         if Subject.objects.filter(name__iexact=subject_name).exists():
             messages.error(request, f"A Subject with the name '{subject_name}' already exists!")
             return render(request, 'add_update_subject.html', {
-                'page': 'Subject',
+                'page': 'Curriculum',
                 'user' : user,
                 })
 
@@ -510,7 +643,7 @@ def add_subject(request):
     else:
         user = request.user
         return render(request, 'add_update_subject.html', {
-            'page': 'Subject',
+            'page': 'Curriculum',
             'user' : user})
 
 
@@ -526,7 +659,7 @@ def update_subject(request, subject_id):
         if missing_fields:
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             return render(request, 'add_update_subject.html', {
-                'page': 'Subject',
+                'page': 'Curriculum',
                 'user': user,
                 'subject_obj': subject_obj,
             })
@@ -538,7 +671,7 @@ def update_subject(request, subject_id):
             messages.error(request, f"A Subject with the name '{subject_name}' already exists!")
             subjectes = Subject.objects.all()
             return render(request, 'add_update_subject.html', {
-                'page': 'Subject',
+                'page': 'Curriculum',
                 'user': user,
                 'subject_obj': subject_obj,
             })
@@ -551,7 +684,7 @@ def update_subject(request, subject_id):
         return redirect('subject_list')
 
     return render(request, 'add_update_subject.html', {
-        'page': 'Subject',
+        'page': 'Curriculum',
         'user': user,
         'subject_obj': subject_obj,
     })
@@ -577,7 +710,7 @@ def class_subject_list(request):
     )
     user = request.user
     return render(request, 'list_class_subject.html', {
-        'page': 'Subject',
+        'page': 'Curriculum',
         'user': user,
         'classes': classes
     })
@@ -592,35 +725,59 @@ def add_class_subject(request):
     if request.method == "POST":
         required_fields = ['class_id', 'section_id', 'added_subjects']
         user = request.user
+        
+        # Validate required fields
         missing_fields = [field for field in required_fields if not request.POST.get(field)]
         if missing_fields:
             messages.error(request, f"Please fill in required fields: {', '.join(missing_fields)}.")
             return render(request, 'add_update_class_subject.html', {
-                'page': 'Subject',
+                'page': 'Curriculum',
+                'user': user,
+                'available_subjects': available_subjects,
+                'classes': classes,
+            })
+
+        class_id = request.POST.get('class_id')
+        section_id = request.POST.get('section_id')
+        
+        try:
+            added_subjects = json.loads(request.POST.get('added_subjects', '[]'))
+        except json.JSONDecodeError:
+            messages.error(request, "Invalid subject data.")
+            return render(request, 'add_update_class_subject.html', {
+                'page': 'Curriculum',
                 'user': user,
                 'available_subjects': available_subjects,
                 'classes': classes,
             })
         
-        class_id = request.POST.get('class_id')
-        section_id = request.POST.get('section_id')
-        added_subjects = request.POST.getlist('added_subjects')
-        
-        section = Section.objects.get(id=section_id, class_name_id=class_id)
-        
+        try:
+            section = Section.objects.get(id=section_id, class_name_id=class_id)
+        except Section.DoesNotExist:
+            messages.error(request, "The specified class or section does not exist.")
+            return render(request, 'add_update_class_subject.html', {
+                'page': 'Curriculum',
+                'user': user,
+                'available_subjects': available_subjects,
+                'classes': classes,
+            })
+
         existing_subjects = set(section.section_subjects.values_list('subject_id', flat=True))
         new_subjects = set(map(int, added_subjects))
         
         subjects_to_add = new_subjects - existing_subjects
-        
         subjects_to_remove = existing_subjects - new_subjects
-        
+
         section.section_subjects.filter(subject_id__in=subjects_to_remove).delete()
-        
+
         for subject_id in subjects_to_add:
-            subject = Subject.objects.get(id=subject_id)
-            section.section_subjects.create(subject=subject)
-        
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                section.section_subjects.create(subject=subject)
+            except Subject.DoesNotExist:
+                messages.error(request, f"Subject with ID {subject_id} does not exist.")
+                continue
+
         messages.success(request, "Subjects successfully updated for the section.")
         return redirect('class_subject_list')
         
@@ -644,7 +801,7 @@ def add_class_subject(request):
             })
     
     return render(request, 'add_update_class_subject.html', {
-        'page': 'Subject',
+        'page': 'Curriculum',
         'user': user,
         'available_subjects' : available_subjects,
         'classes': classes,

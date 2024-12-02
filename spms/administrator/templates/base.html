@@ -59,10 +59,28 @@
             </div>
 
             <!-- Nav Item - Students -->
-            <li class="nav-item {% if page == 'Students' %}active{% endif %}">
+            {% comment %} <li class="nav-item {% if page == 'Students' %}active{% endif %}">
                 <a class="nav-link" href="{% url 'studentlist' %}">
                     <i class="fas fa-user-graduate"></i>
                     <span>Students</span></a>
+            </li> {% endcomment %}
+
+            <!-- Nav Item - Students Menu -->
+            <li class="nav-item {% if page == 'Students' %}active{% endif %}">
+                <a class="nav-link collapsed" href="{% url 'studentlist' %}" data-toggle="collapse" data-target="#collapseOne"
+                    aria-expanded="true" aria-controls="collapseOne">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                </a>
+                <div id="collapseOne" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="{% url 'studentlist' %}">Students</a>
+                        <a class="collapse-item" href="{% url 'studentlistbyclass' %}">Students By Class</a>
+                        {% comment %} <a class="collapse-item" href="{% url 'section_list' %}">Sections</a>
+                        <a class="collapse-item" href="{% url 'subject_list' %}">Subjects</a>
+                        <a class="collapse-item" href="{% url 'class_subject_list' %}">Class Subjects</a> {% endcomment %}
+                    </div>
+                </div>
             </li>
 
             <!-- Divider -->
@@ -74,7 +92,7 @@
             </div>
 
             <!-- Nav Item - Subjects Menu -->
-            <li class="nav-item {% if page == 'Subject' %}active{% endif %}">
+            <li class="nav-item {% if page == 'Curriculum' %}active{% endif %}">
                 <a class="nav-link collapsed" href="{% url 'subject_list' %}" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-book"></i>

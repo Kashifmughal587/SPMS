@@ -33,6 +33,32 @@
         <!-- Student Information -->
         <div class="form-row">
             <div class="col-md-4 mb-3">
+                <label for="class_id">Class<span class="redstaric">*</span></label>
+                <select class="form-control" id="class_id" name="class_id" required>
+                    <option value="">Select a Class</option>
+                    {% for class in classes %}
+                    <option value="{{ class.id }}" {% if obj and obj.class_name.id == class.id %}selected{% endif %}>
+                        {{ class.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="section_id">Section<span class="redstaric">*</span></label>
+                <select class="form-control" id="section_id" name="section_id" required>
+                    <option value="">Select a Section</option>
+                    {% if obj %}
+                        {% for section in obj.class_name.sections.all %}
+                            <option value="{{ section.id }}" {% if obj.section_name.id == section.id %}selected{% endif %}>
+                                {{ section.name }}
+                            </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
                 <label for="registration_number">Registration Number</label>
                 <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ reg_no }}" readonly>
             </div>
@@ -225,4 +251,39 @@
         <a href="{% url 'studentlist' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+<script>
+    // Handle class selection change to load sections dynamically
+    document.getElementById('class_id').addEventListener('change', function() {
+        var classId = this.value;
+
+        if (classId) {
+            fetch(`/administrator/addstudent/?class_id=${classId}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                var sectionSelect = document.getElementById('section_id');
+                sectionSelect.innerHTML = '<option value="">Select a Section</option>';
+                data.sections.forEach(function(section) {
+                    var option = document.createElement('option');
+                    option.value = section.id;
+                    option.textContent = section.name;
+                    sectionSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }
+    });
+</script>
 {% endblock %}

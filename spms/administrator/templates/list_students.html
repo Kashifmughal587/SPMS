@@ -69,7 +69,11 @@
                             <td>{{ student.user__first_name }} {{ student.user__last_name }}</td>
                             <td>{{ student.family__guardian_id__user__first_name }} {{ student.family__guardian_id__user__last_name }}</td>
                             <td>{{ student.gender }}</td>
-                            <td>{{ student.class }} - {{ student.section }}</td>
+                                {% if student.user__enrollments__class_name__name %}
+                                    <td>{{ student.user__enrollments__class_name__name }} - {{ student.user__enrollments__section__name }}</td>
+                                {% else %}
+                                    <td>-</td>
+                                {% endif %}
                             <td>
                                 <a href="{% url 'studentdetail' student.id %}" class="btn btn-primary btn-sm">View</a>
                             </td>
@@ -80,7 +84,6 @@
             </div>
         </div>
     </div>
-
 </div>
 <!-- /.container-fluid -->
 {% endblock %}

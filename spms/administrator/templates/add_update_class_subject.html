@@ -232,20 +232,22 @@
         const form = document.querySelector("form");
         const addedSubjects = document.getElementById("added_subjects");
 
-        form.addEventListener("submit", function (event) {
-
-            if (addedSubjects.options.length === 0) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'added_subjects';
-                input.value = '';
-                form.appendChild(input);
-            }
-            
+        form.addEventListener("submit", function (event) {            
             if (addedSubjects.options.length === 0) {
                 alert("Please add at least one subject before submitting.");
                 event.preventDefault();
             }
+
+            const allSubjects = [];
+            for (let i = 0; i < addedSubjects.options.length; i++) {
+                allSubjects.push(addedSubjects.options[i].value);
+            }
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'added_subjects';
+            input.value = JSON.stringify(allSubjects);
+            form.appendChild(input);
         });
     });
 </script>

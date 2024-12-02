@@ -5,3 +5,4 @@ env/
 *.env
 .vscode/
 *.log
+spms/img/student_pics/

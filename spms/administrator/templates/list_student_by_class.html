@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Add Student</h1>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <p>{{ message }}</p>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Student Search Form -->
+    <form method="get" action="{% url 'studentlistbyclass' %}">
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="class_id">Class<span class="redstaric">*</span></label>
+                <select class="form-control" id="class_id" name="class_id" required>
+                    <option value="">Select a Class</option>
+                    {% for class in classes %}
+                    <option value="{{ class.id }}" {% if selected_class_id|default:'' == class.id|stringformat:"s" %}selected{% endif %}>
+                        {{ class.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="section_id">Section<span class="redstaric">*</span></label>
+                <select class="form-control" id="section_id" name="section_id">
+                    <option value="">Select a Section</option>
+                    {% if sections %}
+                        {% for section in sections %}
+                            <option value="{{ section.id }}" {% if selected_section_id|default:'' == section.id|stringformat:"s" %}selected{% endif %}>
+                                {{ section.name }}
+                            </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3 mt-4">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- DataTales Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Students</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Reg No#</th>
+                            <th>Name</th>
+                            <th>Guardian Name</th>
+                            <th>Gender</th>
+                            <th>Class & Section</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in student_list %}
+                        <tr>
+                            <td>{{ student.student.registration_number }}</td>
+                            <td>{{ student.student.user.first_name }}</td>
+                            <td>{{ student.student.user.last_name }}</td>
+                            <td>{{ student.student.gender }}</td>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.class_name.name }}</td>
+                            <td>{{ student.section.name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('class_id').addEventListener('change', function () {
+        var classId = this.value;
+
+        if (classId) {
+            fetch(`/administrator/addstudent/?class_id=${classId}`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                var sectionSelect = document.getElementById('section_id');
+                sectionSelect.innerHTML = '<option value="">Select a Section</option>';
+                data.sections.forEach(section => {
+                    var option = document.createElement('option');
+                    option.value = section.id;
+                    option.textContent = section.name;
+                    sectionSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    });
+</script>
+{% endblock %}

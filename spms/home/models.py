@@ -61,12 +61,18 @@ class SectionSubject(models.Model):
     def __str__(self):
         return f"{self.section_name.name} - {self.subject.name}"
 
-# Student Enrollment Model (link students to classes and sections)
 class StudentEnrollment(models.Model):
-    student = models.OneToOneField(User, on_delete=models.CASCADE, related_name="enrollments")
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollments")
     class_name = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="enrollments")
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="enrollments")
+    academic_year = models.CharField(max_length=9, blank=True, null=True)  # e.g., "2024-2025"
+    roll_number = models.CharField(max_length=20, unique=True, blank=True)
+    status = models.CharField(max_length=10, choices=[
+        ('active', 'Active'),
+        ('on_hold', 'On Hold'),
+        ('completed', 'Completed'),
+    ], default='active')
     enrollment_date = models.DateField(default=timezone.now)
-    
+
     def __str__(self):
-        return f"{self.student.first_name} - {self.class_name.name} - {self.section.name}"
+        return f"{self.student.first_name} - {self.roll_number} - {self.academic_year}"

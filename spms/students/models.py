@@ -28,7 +28,6 @@ class Student(models.Model):
     permanent_state = models.TextField(blank=True, null=True)
     permanent_country = models.TextField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    roll_number = models.CharField(max_length=15, blank=True, null=True)
     
     profile_picture = models.ImageField(upload_to='img/student_pics/', blank=True, null=True)
     admission_date = models.DateField(default=timezone.now)
