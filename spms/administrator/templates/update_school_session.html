@@ -7,7 +7,7 @@
     <form method="post" action="{% url 'update_school_session' session.pk %}">
         {% csrf_token %}
         {{ form.as_p }}  <!-- Renders the form as paragraphs -->
-        <button type="submit" class="btn btn-primary">Update</button>
+        <button type="submit" class="btn btn-danger">Update</button>
     </form>
 </div>
 {% endblock %}

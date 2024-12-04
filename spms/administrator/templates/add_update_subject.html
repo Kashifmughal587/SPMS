@@ -47,7 +47,7 @@
         </div>
 
         <!-- Submit and Cancel Buttons -->
-        <button type="submit" class="btn btn-primary">{% if subject_obj %} Update {% else %} Submit {% endif %}</button>
+        <button type="submit" class="btn btn-danger">{% if subject_obj %} Update {% else %} Submit {% endif %}</button>
         <a href="{% url 'subject_list' %}" class="btn btn-secondary ml-2">Cancel</a>
     </form>
 </div>

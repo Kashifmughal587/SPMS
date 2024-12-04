@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db import transaction
+from datetime import date
 import json
 
 #########################################################################################################
@@ -45,6 +46,8 @@ def student_list(request):
     ).values(
         'id',
         'registration_number',
+        'dob',
+        'blood_group',
         'user__first_name',
         'user__last_name',
         'family__family_id',
@@ -54,6 +57,13 @@ def student_list(request):
         'user__enrollments__class_name__name',  # Assuming class_name has a 'name' field
         'user__enrollments__section__name'      # Assuming section has a 'name' field
     )
+    
+    today = date.today()
+    for student in students:
+        dob = student.get('dob')
+        if dob:
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            student['age'] = age
 
     user = request.user
     return render(request, 'list_students.html', {
@@ -76,43 +86,24 @@ def student_list_by_class(request):
             sections_data = [{"id": section.id, "name": section.name} for section in sections]
             return JsonResponse({'sections': sections_data})
 
-    # Retrieve selected class and section IDs
     selected_class_id = request.GET.get('class_id')
     selected_section_id = request.GET.get('section_id')
 
-    # Filter students based on selected criteria
-    students = StudentEnrollment.objects.filter(
-        academic_year=f"{current_session.start_date.year}-{current_session.end_date.year}" if current_session else None,
-        class_name_id=selected_class_id if selected_class_id else None,
-        section_id=selected_section_id if selected_section_id else None,
-        status='active'
-    ).select_related(
-        'student',  # This references the Student model
-        'student__family__guardian__user',  # Include deeper relationships
-        'class_name',
-        'section'
-    ).only(
-        'student__registration_number',  # Field on Student
-        'student__user__first_name',    # Use user field of Student
-        'student__user__last_name',
-        'student__gender',
-        'class_name__name',
-        'section__name'
-    )
+    students = StudentEnrollment.objects.select_related(
+        'student', 
+        'student__parent__family',
+        'student__parent__family__guardian',
+        'student__parent__family__guardian__user',
+        'class_name', 
+        'section').filter(
+        class_name_id=selected_class_id,
+        section_id=selected_section_id,
+        academic_year=current_session.start_date.strftime('%Y') + '-' + str(current_session.end_date.year)
+    ) if selected_class_id and selected_section_id else []
+        
+    for student in students:
+        print(student.student.student.family.guardian.user.first_name)
 
-    # Get sections if a class is selected
-    sections = Section.objects.filter(class_name_id=selected_class_id).only('id', 'name') if selected_class_id else None
-
-    return render(request, 'list_student_by_class.html', {
-        'page': 'Students',
-        'classes': classes,
-        'sections': sections,
-        'student_list': students,
-        'selected_class_id': selected_class_id,
-        'selected_section_id': selected_section_id,
-    })
-
-    # Get sections if a class is selected
     sections = Section.objects.filter(class_name_id=selected_class_id).only('id', 'name') if selected_class_id else None
 
     return render(request, 'list_student_by_class.html', {

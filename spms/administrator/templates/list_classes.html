@@ -7,7 +7,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-2 text-gray-800">Classes</h1>
-        <a href="{% url 'add_class' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <a href="{% url 'add_class' %}" class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm">
             <i class="fas fa-chalkboard-teacher fa-sm text-white-50"></i> Add New Class
         </a>
     </div>
@@ -38,7 +38,7 @@
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">All Classes</h6>
+            <h6 class="m-0 font-weight-bold text-danger">All Classes</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -66,7 +66,7 @@
                                 <td>{{ class.name }}</td>
                                 <td>{{ class.description }}</td>
                                 <td>
-                                    <a href="{% url 'update_class' class.id %}" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="{% url 'update_class' class.id %}" class="btn btn-sm btn-danger">Edit</a>
                                     <button class="btn btn-sm btn-secondary" onclick="confirmDelete({{ class.id }})">Delete</button>
                                     <form id="delete-form-{{ class.id }}" action="{% url 'delete_class' class.id %}" method="POST" style="display: none;">
                                         {% csrf_token %}

@@ -7,7 +7,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-2 text-gray-800">Subject</h1>
-        <a href="{% url 'add_subject' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i 
+        <a href="{% url 'add_subject' %}" class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm"><i 
             class="fas fa-graduation-cap fa-sm text-white-50"></i> Add New Subject</a>
     </div>
 
@@ -37,7 +37,7 @@
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">All Subjects</h6>
+            <h6 class="m-0 font-weight-bold text-danger">All Subjects</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -65,7 +65,7 @@
                                 <td>{{ subject.name }}</td>
                                 <td>{{ subject.description }}</td>
                                 <td>
-                                    <a href="{% url 'update_subject' subject.id %}" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="{% url 'update_subject' subject.id %}" class="btn btn-sm btn-danger">Edit</a>
                                     <button class="btn btn-sm btn-secondary" onclick="confirmDelete({{ subject.id }})">Delete</button>
                                     <form id="delete-form-{{ subject.id }}" action="{% url 'delete_subject' subject.id %}" method="POST" style="display: none;">
                                         {% csrf_token %}

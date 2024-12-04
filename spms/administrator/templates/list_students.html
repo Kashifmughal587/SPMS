@@ -7,7 +7,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-2 text-gray-800">Students</h1>
-        <a href="{% url 'addstudent' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
+        <a href="{% url 'addstudent' %}" class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm"><i
             class="fas fa-user-plus fa-sm text-white-50"></i> New Admission</a>
     </div>
     
@@ -37,7 +37,7 @@
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">All Students</h6>
+            <h6 class="m-0 font-weight-bold text-danger">All Students</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -48,6 +48,8 @@
                             <th>Name</th>
                             <th>Guardian Name</th>
                             <th>Gender</th>
+                            <th>Age</th>
+                            <th>Blood Group</th>
                             <th>Class & Section</th>
                             <th>Action</th>
                         </tr>
@@ -58,6 +60,8 @@
                             <th>Name</th>
                             <th>Guardian Name</th>
                             <th>Gender</th>
+                            <th>Age</th>
+                            <th>Blood Group</th>
                             <th>Class & Section</th>
                             <th>Action</th>
                         </tr>
@@ -69,13 +73,15 @@
                             <td>{{ student.user__first_name }} {{ student.user__last_name }}</td>
                             <td>{{ student.family__guardian_id__user__first_name }} {{ student.family__guardian_id__user__last_name }}</td>
                             <td>{{ student.gender }}</td>
+                            <td>{{ student.age }}</td>
+                            <td>{{ student.blood_group }}</td>
                                 {% if student.user__enrollments__class_name__name %}
                                     <td>{{ student.user__enrollments__class_name__name }} - {{ student.user__enrollments__section__name }}</td>
                                 {% else %}
                                     <td>-</td>
                                 {% endif %}
                             <td>
-                                <a href="{% url 'studentdetail' student.id %}" class="btn btn-primary btn-sm">View</a>
+                                <a href="{% url 'studentdetail' student.id %}" class="btn btn-danger btn-sm">View</a>
                             </td>
                         </tr>
                         {% endfor %}

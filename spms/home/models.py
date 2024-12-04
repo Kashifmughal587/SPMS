@@ -71,6 +71,9 @@ class StudentEnrollment(models.Model):
         ('active', 'Active'),
         ('on_hold', 'On Hold'),
         ('completed', 'Completed'),
+        ('removed', 'Removed'),
+        ('struck_off', 'Struck Off'),
+        ('expelled', 'Expelled'),
     ], default='active')
     enrollment_date = models.DateField(default=timezone.now)
 
